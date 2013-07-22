@@ -52,7 +52,7 @@ local function fb_spec_new(name, input_specs, output_specs, state_var_specs, alg
    
    if type(name) == "table" then
       local t = name
-      if #t == 5 then
+      if #t ~= 0 then
          fb_spec.name = t[1]
          fb_spec.input_specs = t[2]
          fb_spec.output_specs = t[3]
@@ -103,6 +103,15 @@ local function fb_data_item_new(data_spec)
 end
 
 
+
+
+function fc_spec_new(name, inputs, outputs, function_blocks, links)
+   local fcs = {}
+   
+   return fcs
+end
+
+
 function fc_step(self)
    fbs_to_run = {}
    for _, fb in ipairs(self.fblocks) do
@@ -113,7 +122,6 @@ function fc_step(self)
    for _, fb in ipairs(self.inputs) do
    end
    
-   while 
    for _, fp in ipairs(fbs_to_run) do
    end
    
@@ -126,92 +134,11 @@ end
 
 
 
-
-
--- Some examples of function blocks
-
-
-lpf1 = fb_spec_new{
-   "RC LP filter",
-   { -- Inputs
-      fb_data_spec_new("x", "real", 0),
-      fb_data_spec_new("alpha", "real", 0),
-   },
-   { -- Outputs
-      fb_data_spec_new("y", "real", 0),
-   },
-   { -- State variables
-      fb_data_spec_new("S", "real", 0),
-   },
-   function(inputs, outputs, state_vars)
-      state_vars.S = inputs.alpha * inputs.x + (1 - inputs.alpha) * state_vars.S
-      outputs.y = state_vars.S
-   end,
+local fb = 
+{
+   fb_spec_new = fb_spec_new,
+   data_spec_new = fb_data_spec_new,
 }
 
-add = fb_spec_new{
-   "+",
-   { -- Inputs
-      { "a", "real", 0 },
-      { "b", "real", 0 },
-   },
-   { -- Outputs
-      { "q", "real", 0 },
-   },
-   nil, -- State vars
-   function(inputs, outputs, state_vars)
-      outputs.q = inputs.a + inputs.b
-   end,
-}
-
-subtract = fb_spec_new{
-   "-",
-   { -- Inputs
-      { "a", "real", 0 },
-      { "b", "real", 0 },
-   },
-   { -- Outputs
-      { "q", "real", 0 },
-   },
-   nil, -- State vars
-   function(inputs, outputs, state_vars)
-      outputs.q = inputs.a - inputs.b
-   end,
-}
-
-delay = fb_spec_new{
-   "1/s",
-   { -- Inputs
-      { "a", "real", 0 },
-   },
-   { -- Outputs
-      { "q", "real", 0 },
-   },
-   { -- State vars
-      { "s", "real", 0 },
-   },
-   function(inputs, outputs, state_vars)
-      outputs.q = state_vars.s
-      state_vars.s = inputs.a
-   end,
-}
-
-
-
-
--- Some examples of function charts
-
-fc_spec1 = fc_spec_new{
-   inputs,
-   outputs,
-   function_blocks,
-   links,
-}
-
-
-
-
-
-fc1 = fc_new(fc_spec1)
-fc1:run()
+return fb
 
