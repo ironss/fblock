@@ -69,14 +69,37 @@ function Test_fb_spec:test_create_table_named()
       end,
    }
 
-   assertEquals(type(fbs1), "table")
-   assertEquals(fbs1.name, "RC LP filter")
+   assertEquals(type(fbs1), 'table')
+   assertEquals(fbs1.name, 'RC LP filter')
    assertEquals(#fbs1.input_specs, 2)
    assertEquals(#fbs1.output_specs, 1)
    assertEquals(#fbs1.state_var_specs, 1)
-   assertEquals(type(fbs1.algorithm), "function")
+   assertEquals(type(fbs1.algorithm), 'function')
 
 end
 
+
+
+
+Test_fc_spec = {}
+
+function Test_fc_spec:test_create_table_named()
+   local fcs1 = fb.fc_spec_new{
+      name='FC Spec 1',
+      inputs={
+      },
+      outputs={
+      },
+      function_blocks={
+      },
+      links={
+      },
+   }
+   
+   assertEquals(type(fcs1), 'table')
+   assertEquals(fcs1.name, 'FC Spec 1')
+end
+
+ 
 return LuaUnit:run()
 

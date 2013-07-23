@@ -55,32 +55,39 @@ end
 local function fb_spec_new(name, inputs, outputs, state_vars, algorithm, reset)
    local fb_spec = {}
    
-   if type(name) == "table" then
+   if type(name) == 'table' then
       local t = name
       if #t ~= 0 then
          fb_spec.name = t[1]
-         fb_spec.input_specs = t[2]
-         fb_spec.output_specs = t[3]
-         fb_spec.state_var_specs = t[4]
-         fb_spec.algorithm = t[5]
+         fb_spec.input_specs = t[2] or {}
+         fb_spec.output_specs = t[3] or {}
+         fb_spec.state_var_specs = t[4] or {}
+         fb_spec.algorithm = t[5] or function() return true end
+         fb_spec.reset = t[6]
       else
          fb_spec.name = t.name
-         fb_spec.input_specs = t.inputs
-         fb_spec.output_specs = t.outputs
-         fb_spec.state_var_specs = t.state_vars
-         fb_spec.algorithm = t.algorithm
+         fb_spec.input_specs = t.inputs or {}
+         fb_spec.output_specs = t.outputs or {}
+         fb_spec.state_var_specs = t.state_vars or {}
+         fb_spec.algorithm = t.algorithm or function() return true end
+         fb_spec.reset = t.reset
       end
    else
-      fb_spec.name = name
-      fb_spec.input_specs = inputs
-      fb_spec.output_specs = outputs
-      fb_spec.state_var_specs = state_vars
-      fb_spec.algorithm = algorithm
+      fb_spec.name = name or '<noname>'
+      fb_spec.input_specs = inputs or {}
+      fb_spec.output_specs = outputs or {}
+      fb_spec.state_var_specs = state_vars or {}
+      fb_spec.algorithm = algorithm or function() return true end
+      fb_spec.reset = reset
    end
 
-   if type(reset) == "function" then
-      fb_spec.reset = reset
-   else
+   -- TODO: Must provide a name
+   -- TODO: Must provide an algorithm
+   -- TODO: Must provide either inputs or outputs or both
+   -- State variables are optional
+
+   if type(fb_spec.reset) ~= 'function' then
+      -- TODO: Log that we are using default reset function
       fb_spec.reset = fb_reset_default
    end
 
@@ -102,10 +109,10 @@ end
 -- * call the function, passing a table as a parameter with positional parameters
 -- * call the function, passing a table as a parameter with named parameters
 
-local function fb_data_spec_new(name, datatype, default_value)
+local function data_spec_new(name, datatype, default_value)
    local data_spec = {}
    
-   if type(name) == "table" then
+   if type(name) == 'table' then
       local t = name
       if #t ~= 0 then
          data_spec.name = t[1]
@@ -121,26 +128,74 @@ local function fb_data_spec_new(name, datatype, default_value)
       data_spec.datatype = datatype
       data_spec.default_value = default_value
    end
-   
+
+   -- TODO: Must provide a name
+   -- TODO: Must provide an algorithm
+
    return data_spec
 end
 
 
-local function fb_data_item_new(data_spec)
-   local data_item = {}
-   data_item.spec = data_spec
-   data_item.value = data_spec.default_value
+
+-- Data items
+
+local function data_item_reset(data_item)
+   data_item.default_value = data_item.data_spec.default_value
    data_item.has_changed = false
 end
 
+-- Data item factory
+-- Given a data item specification, create a new data item
+
+local function data_item_new(data_spec)
+   local data_item = {}
+   data_item.spec = data_spec
+   data_item_reset(self)
+   
+   return data_item
+end
 
 
+
+-- Specification for a new function chart
+-- --------------------------------------
 
 function fc_spec_new(name, inputs, outputs, function_blocks, links)
-   local fcs = {}
+   local fc_spec = {}
+
+   if type(name) == 'table' then
+      local t = name
+      if #t ~= 0 then
+         fc_spec.name = t[1]
+         fc_spec.inputs = t[2] or {}
+         fc_spec.outputs = t[3] or {}
+         fc_spec.function_blocks = t[4] or {}
+         fc_spec.links = t[5] or {}
+      else
+         fc_spec.name = t.name
+         fc_spec.inputs = t.inputs or {}
+         fc_spec.outputs = t.outputs or {}
+         fc_spec.function_blocks = t.function_blocks or {}
+         fc_spec.links = t.links or {}
+      end
+   else
+      fc_spec.name = name
+      fc_spec.inputs = inputs or {}
+      fc_spec.outputs = outputs or {}
+      fc_spec.function_blocks = function_blocks or {}
+      fc_spec.links = links or {}
+   end
    
-   return fcs
+   -- TODO: Name is mandatory
+   -- TODO: Inputs, outputs, function blocks and links are mandatory
+   -- TODO: Verify that links are valid
+   --       * Input and output names exist
+   --       * Datatypes match
+
+   return fc_spec
 end
+
+
 
 
 function fc_step(self)
@@ -149,14 +204,18 @@ function fc_step(self)
       fb.has_run = false
       fbs_to_run[#fbs_to_run+1] = fb
    end
-   
-   for _, fb in ipairs(self.inputs) do
+
+   for _, input in ipairs(self.inputs) do
    end
    
-   for _, fp in ipairs(fbs_to_run) do
+   self.something_has_changed = true
+   while self.something_has_changed do
+      for _, fb in ipairs(fbs_to_run) do
+      end
    end
-   
-   
+
+   for _, output in ipairs(self.outputs) do
+   end
 end
 
 function fc_reset(self)
@@ -167,8 +226,9 @@ end
 
 local fb = 
 {
+   data_spec_new = data_spec_new,
    fb_spec_new = fb_spec_new,
-   data_spec_new = fb_data_spec_new,
+   fc_spec_new = fc_spec_new,
 }
 
 return fb
