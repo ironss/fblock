@@ -22,7 +22,35 @@ end
 
 Test_fb_spec = {}
 
-function Test_fb_spec:test_create_table_positional()
+function Test_fb_spec:test_create_positional1()
+   local fbs1 = fb.fb_spec_new(
+      "RC LP filter",
+      { -- Inputs
+         fb.data_spec_new("x", "real", 0),
+         fb.data_spec_new("alpha", "real", 0),
+      },
+      { -- Outputs
+         fb.data_spec_new("y", "real", 0),
+      },
+      { -- State variables
+         fb.data_spec_new("S", "real", 0),
+      },
+      function(inputs, outputs, state_vars)
+         state_vars.S = inputs.alpha * inputs.x + (1 - inputs.alpha) * state_vars.S
+         outputs.y = state_vars.S
+      end
+   )
+
+   assertEquals(type(fbs1), "table")
+   assertEquals(fbs1.name, "RC LP filter")
+   assertEquals(#fbs1.input_specs, 2)
+   assertEquals(#fbs1.output_specs, 1)
+   assertEquals(#fbs1.state_var_specs, 1)
+   assertEquals(type(fbs1.algorithm), "function")
+
+end
+
+function Test_fb_spec:test_create_positional2()
    local fbs1 = fb.fb_spec_new{
       "RC LP filter",
       { -- Inputs
@@ -51,7 +79,8 @@ function Test_fb_spec:test_create_table_positional()
 end
 
 
-function Test_fb_spec:test_create_table_named()
+
+function Test_fb_spec:test_create_named()
    local fbs1 = fb.fb_spec_new{
       name="RC LP filter",
       inputs = {
@@ -84,7 +113,7 @@ end
 
 Test_fc_spec = {}
 
-function Test_fc_spec:test_create_table_named()
+function Test_fc_spec:test_create_named()
    local ramp1 = fb.fb_spec_new{
       name='Ramp input 1',
       inputs=nil,
@@ -370,65 +399,107 @@ function Test_fc_instance:test_create()
       name='Ramp 1',
       inputs=nil,
       outputs={
-         fb.data_spec_new{ 'q', 'real', 0 },
+         fb.data_spec_new{ 'q', 'real', nil },
       },
       state_vars={
          fb.data_spec_new{ 's', 'real', 0 },
       },
-      algorithm=function(inputs, outputs, state_vars)
-         state_vars.s = state_vars.s + 1
-         if state_vars.s >= 51 then
-            state_vars.s = 0
+      algorithm=function(data)
+         data.q.value = data.s.value
+         data.q.has_changed = true
+
+         data.s.value = data.s.value + 1
+         if data.s.value >= 103 then
+            data.s.value = data.s.value - 103
          end
-         outputs.q = state_vars.s
-      end
+         
+         for _, item in ipairs(data.q.drives) do
+            item.value = data.q.value
+            item.has_changed = true
+            item.fblock.has_changed = true
+            item.fblock.fc_inst.has_changed = true
+         end
+      end,
+      time = 0,
    }
    
    local ramp2 = fb.fb_spec_new{
       name='Ramp 2',
       inputs=nil,
       outputs={
-         fb.data_spec_new{ 'q', 'real', 0 },
+         fb.data_spec_new{ 'q', 'real', nil },
       },
       state_vars={
          fb.data_spec_new{ 's', 'real', 0 },
       },
-      algorithm=function(inputs, outputs, state_vars)
-         state_vars.s = state_vars.s + 2
-         if state_vars.s >= 79 then
-            state_vars.s = 0
+      algorithm=function(data)
+         data.q.value = data.s.value
+         data.q.has_changed = true
+
+         data.s.value = data.s.value + 1.5
+         if data.s.value >= 79 then
+            data.s.value = data.s.value - 79
          end
-         outputs.q = state_vars.s
-      end
+
+         for _, item in ipairs(data.q.drives) do
+            item.value = data.q.value
+            item.has_changed = true
+            item.fblock.has_changed = true
+         end
+      end,
+      time = 0,
    }
 
    local add = fb.fb_spec_new{
       name="Add",
       inputs={
-         fb.data_spec_new{ "a", "real", 0 },
-         fb.data_spec_new{ "b", "real", 0 },
+         fb.data_spec_new{ "a", "real", nil },
+         fb.data_spec_new{ "b", "real", nil },
       },
       outputs={
-         fb.data_spec_new{ "q", "real", 0 },
+         fb.data_spec_new{ "q", "real", nil },
       },
       state_vars=nil,
-      algorithm=function(inputs, outputs, state_vars)
-         outputs.q = inputs.a + inputs.b
+      algorithm=function(data)
+         if data.a.value ~= nil and data.b.value ~= nil then
+            data.q.value = data.a.value + data.b.value
+            data.q.has_changed = true
+            
+            data.a.has_changed = false
+            data.b.has_changed = false
+            for _, item in ipairs(data.q.drives) do
+               item.value = data.q.value
+               item.has_changed = true
+               item.fblock.has_changed = true
+            end
+         end
       end,
    }
 
    local subtract = fb.fb_spec_new{
       name="Sub",
       inputs={
-         fb.data_spec_new{ "a", "real", 0 },
-         fb.data_spec_new{ "b", "real", 0 },
+         fb.data_spec_new{ "a", "real", nil },
+         fb.data_spec_new{ "b", "real", nil },
       },
       outputs={
-         fb.data_spec_new{ "q", "real", 0 },
+         fb.data_spec_new{ "q", "real", nil },
       },
       state_vars=nil,
-      algorithm=function(inputs, outputs, state_vars)
-         outputs.q = inputs.a - inputs.b
+      algorithm=function(data)
+         if data.a.value ~= nil and data.b.value ~= nil then
+            data.q.value = data.a.value - data.b.value
+            data.q.has_changed = true
+            
+            data.a.has_changed = false
+            data.b.has_changed = false
+            for _, item in ipairs(data.q.drives) do
+               item.value = data.q.value
+               item.has_changed = true
+               item.fblock.has_changed = true
+            end
+            
+         end
       end,
    }
 
@@ -439,8 +510,9 @@ function Test_fc_instance:test_create()
       },
       outputs=nil,
       state_vars=nil,
-      algorithm=function(inputs, outputs, state_vars)
-         print(inputs.x)
+      algorithm=function(data)
+         print(data.x.value)
+         data.x.has_changed = false
       end
    }
 
@@ -448,11 +520,13 @@ function Test_fc_instance:test_create()
       name='Chart_1',
       inputs={
          { 'R1', ramp1 },
-         { 'R2', ramp1 },
+         { 'R2', ramp2 },
       },
       outputs={
          { 'P1', printer },
          { 'P2', printer },
+         { 'P3', printer },
+         { 'P4', printer },
       },
       function_blocks={
          { 'ADD1', add },
@@ -463,8 +537,10 @@ function Test_fc_instance:test_create()
          { { 'R2', 'q' },   { 'ADD1', 'b'  }},
          { { 'R1', 'q' },   { 'SUB1', 'a' } },
          { { 'R2', 'q' },   { 'SUB1', 'b' } },
-         { { 'ADD1', 'q' }, { 'P1', 'x' } },
-         { { 'SUB1', 'q' }, { 'P2', 'x' } },
+         { { 'R1', 'q' },   { 'P1', 'x' } },
+         { { 'R2', 'q' },   { 'P2', 'x' } },
+         { { 'ADD1', 'q' }, { 'P3', 'x' } },
+         { { 'SUB1', 'q' }, { 'P4', 'x' } },
       },
    }
 
@@ -472,8 +548,11 @@ function Test_fc_instance:test_create()
    
    assertEquals(fc_inst_1.name, 'Test_1')
    assertEquals(fc_inst_1.data_items['Test_1.ADD1.a'].is_driven_by, fc_inst_1.data_items['Test_1.R1.q'])
-   
-   print(serpent.block(fc_inst_1.data_items, {nocode=true}))
+
+   fb.fc_reset(fc_inst_1)
+   for s = 1, 10 do
+      fb.fc_step(fc_inst_1)
+   end
 end
 
  

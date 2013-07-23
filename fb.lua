@@ -40,7 +40,7 @@ end
 -- * call the function, passing a table as a parameter with positional parameters
 -- * call the function, passing a table as a parameter with named parameters
 
-local function fb_spec_new(name, inputs, outputs, state_vars, algorithm, reset)
+local function fb_spec_new(name, inputs, outputs, state_vars, algorithm, reset, time)
    local fb_spec = {}
    
    if type(name) == 'table' then
@@ -52,6 +52,7 @@ local function fb_spec_new(name, inputs, outputs, state_vars, algorithm, reset)
          fb_spec.state_var_specs = t[4] or {}
          fb_spec.algorithm = t[5] or function() return true end
          fb_spec.reset = t[6]
+         fb_spec.time = t[7]
       else
          fb_spec.name = t.name
          fb_spec.input_specs = t.inputs or {}
@@ -59,6 +60,7 @@ local function fb_spec_new(name, inputs, outputs, state_vars, algorithm, reset)
          fb_spec.state_var_specs = t.state_vars or {}
          fb_spec.algorithm = t.algorithm or function() return true end
          fb_spec.reset = t.reset
+         fb_spec.time = t.time
       end
    else
       fb_spec.name = name or '<noname>'
@@ -67,6 +69,7 @@ local function fb_spec_new(name, inputs, outputs, state_vars, algorithm, reset)
       fb_spec.state_var_specs = state_vars or {}
       fb_spec.algorithm = algorithm or function() return true end
       fb_spec.reset = reset
+      fb_spec.time = time
    end
 
    if type(fb_spec.reset) ~= 'function' then
@@ -126,14 +129,15 @@ local function fb_spec_new(name, inputs, outputs, state_vars, algorithm, reset)
 end
 
 
--- Data item factory
+-- Data items
 -- Given a data item specification, create a new data item
 
-local function data_item_new(name, data_spec)
+local function data_item_new(name, fblock, data_spec)
    local data_item = {}
    
    data_item.name = name
-   data_item.spec = data_spec
+   data_item.fblock = fblock
+   data_item.data_spec = data_spec
    data_item.drives = {}
    
    return data_item
@@ -141,23 +145,43 @@ end
 
 
 
+-- Data items
 
-local function fb_new(name, fb_spec)
+local function data_item_reset(data_item)
+   data_item.value = data_item.data_spec.default_value
+   data_item.has_changed = false
+end
+
+
+
+local function fb_new(name, fb_spec, fc_inst)
    local fb_inst = {}
    
    fb_inst.name = name
+   fb_inst.fb_spec = fb_spec
    
    local data_items = {}
+   local data = {}
    for _, data_spec in pairs(fb_spec.data_specs) do
       local data_item_name = name .. '.' .. data_spec.name
-      print(data_item_name)
-      data_items[data_item_name] = data_item_new(data_item_name, data_spec)
+      data_item = data_item_new(data_item_name, fb_inst, data_spec)
+      data_items[data_item_name] = data_item
+      data[data_spec.name] = data_item
    end
 
    fb_inst.data_items = data_items
+   fb_inst.data = data
+   fb_inst.fc_inst = fc_inst
    return fb_inst
 end
 
+
+local function fb_reset(fb)
+   for _, item in pairs(fb.data_items) do
+      data_item_reset(item)
+   end
+   fb.has_changed = false
+end
 
 -- Specification for a data item
 -- -----------------------------
@@ -196,14 +220,6 @@ local function data_spec_new(name, datatype, default_value)
    data_spec.is_connected = false
 
    return data_spec
-end
-
-
--- Data items
-
-local function data_item_reset(data_item)
-   data_item.default_value = data_item.data_spec.default_value
-   data_item.has_changed = false
 end
 
 
@@ -344,14 +360,15 @@ end
 -- Create a function chart run-time instance
 -- -----------------------------------------
 
-function fc_instance_new(name, fc_spec)
+local function fc_instance_new(name, fc_spec)
+   local fc_inst = {}
    local blocks = {}
    local data_items = {}
    
    local inputs = {}
    for _, i in ipairs(fc_spec.inputs) do
       local block_name = name .. '.' .. i[1]
-      local fb = fb_new(block_name, i[2])
+      local fb = fb_new(block_name, i[2], fc_inst)
       inputs[#inputs+1] = fb
       blocks[block_name] = fb
       for data_item_name, data_item in pairs(fb.data_items) do
@@ -362,7 +379,7 @@ function fc_instance_new(name, fc_spec)
    local outputs = {}
    for _, o in ipairs(fc_spec.outputs) do
       local block_name = name .. '.' .. o[1]
-      local fb = fb_new(block_name, o[2])
+      local fb = fb_new(block_name, o[2], fc_inst)
       outputs[#outputs+1] = fb
       blocks[block_name] = fb
       for data_item_name, data_item in pairs(fb.data_items) do
@@ -373,7 +390,7 @@ function fc_instance_new(name, fc_spec)
    local functions = {}
    for _, f in ipairs(fc_spec.function_blocks) do
       local block_name = name .. '.' .. f[1]
-      local fb = fb_new(block_name, f[2])
+      local fb = fb_new(block_name, f[2], fc_inst)
       functions[#functions+1] = fb
       blocks[block_name] = fb
       for data_item_name, data_item in pairs(fb.data_items) do
@@ -394,8 +411,6 @@ function fc_instance_new(name, fc_spec)
       local source_full_name = name .. '.' .. source_name .. '.' .. source_port
       local dest_full_name = name .. '.' .. dest_name .. '.' .. dest_port
       
-      print(source_full_name .. ' -> ' .. dest_full_name)
-      
       local source_item = data_items[source_full_name]
       local dest_item   = data_items[dest_full_name]
       
@@ -403,41 +418,55 @@ function fc_instance_new(name, fc_spec)
       dest_item.is_driven_by = source_item
    end
 
-   local fc_inst = 
-   {
-      name = name,
-      inputs = inputs,
-      outputs = outputs,
-      blocks = blocks,
-      data_items = data_items,
-   }
+   fc_inst.name = name
+   fc_inst.inputs = inputs
+   fc_inst.outputs = outputs
+   fc_inst.functions = functions
+   fc_inst.blocks = blocks
+   fc_inst.data_items = data_items
 
    return fc_inst
 end
 
-function fc_step(self)
-   fbs_to_run = {}
-   for _, fb in ipairs(self.blocks) do
-      fb.has_run = false
-      fbs_to_run[#fbs_to_run+1] = fb
-   end
 
-   for _, input in ipairs(self.inputs) do
-   end
-   
-   self.something_has_changed = true
-   while self.something_has_changed do
-      for _, fb in ipairs(fbs_to_run) do
-      end
-   end
 
-   for _, output in ipairs(self.outputs) do
+local function fc_reset(fc)
+   for _, fb in pairs(fc.blocks) do
+      fb_reset(fb)
    end
+   fc.has_changed = false
 end
 
 
-function fc_reset(self)
 
+local function fc_step(self)
+   fbs_to_run = {}
+   for _, fb in ipairs(self.functions) do
+      fbs_to_run[#fbs_to_run+1] = fb
+   end
+
+   for _, fb  in ipairs(self.inputs) do
+      if fb.has_changed or fb.fb_spec.time == 0 then
+         fb.fb_spec.algorithm(fb.data)
+         fb.has_changed = false
+      end
+   end
+
+   for i, fb in ipairs(fbs_to_run) do
+      if fb.has_changed or fb.fb_spec.time == 0 then
+         fb.fb_spec.algorithm(fb.data)
+         fb.has_changed = false
+      end
+   end
+
+   for _, fb in ipairs(self.outputs) do
+      if fb.has_changed or fb.fb_spec.time == 0 then
+         fb.fb_spec.algorithm(fb.data)
+         fb.has_changed = false
+      end
+   end
+   
+   print('-----')
 end
 
 
@@ -448,6 +477,8 @@ local fb =
    fb_spec_new = fb_spec_new,
    fc_spec_new = fc_spec_new,
    fc_instance_new = fc_instance_new,
+   fc_reset = fc_reset,
+   fc_step = fc_step,
 }
 
 return fb
