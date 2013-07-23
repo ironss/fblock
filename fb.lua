@@ -11,18 +11,6 @@ Function block processing
 5. Instantiate a function chart
 6. Single-step a function chart
 
-
-
-
-Specify a function block
-========================
-
-1. Name
-2. Inputs
-3. Outputs
-4. State variables
-5. Algorithm
-
 --]]
 
 
@@ -81,11 +69,6 @@ local function fb_spec_new(name, inputs, outputs, state_vars, algorithm, reset)
       fb_spec.reset = reset
    end
 
-   -- TODO: Must provide a name
-   -- TODO: Must provide an algorithm
-   -- TODO: Must provide either inputs or outputs or both
-   -- State variables are optional
-
    if type(fb_spec.reset) ~= 'function' then
       -- TODO: Log that we are using default reset function
       fb_spec.reset = fb_reset_default
@@ -93,6 +76,12 @@ local function fb_spec_new(name, inputs, outputs, state_vars, algorithm, reset)
 
    local valid = true
    local msgs = {}
+   
+   if fb_spec.name == nil then
+      valid = false
+      msgs[#msgs+1] = "No name provided."
+   end
+   
    local data_specs = {}
    for _, s in ipairs(fb_spec.input_specs) do
       s.fb_spec = fb_spec
@@ -253,14 +242,16 @@ local function fc_spec_new(name, inputs, outputs, function_blocks, links)
    
    -- TODO: Name is mandatory
    -- TODO: Inputs, outputs, function blocks and links are mandatory
-   -- TODO: Verify that links are valid
-   --       * Input and output names exist
-   --       * Datatypes match
 
    -- Validation
    local valid=true
    local msgs = {}
 
+   if fc_spec.name == nil then
+      valid = false
+      msgs[#msgs+1] = "No name provided."
+   end
+   
    -- Ensure that the names of inputs, outputs and function blocks are unique
    local blocks = {}
    for _, b in ipairs(fc_spec.inputs) do
