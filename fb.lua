@@ -91,6 +91,18 @@ local function fb_spec_new(name, inputs, outputs, state_vars, algorithm, reset)
       fb_spec.reset = fb_reset_default
    end
 
+   for _, i in ipairs(fb_spec.input_specs) do
+      fb_spec.input_specs[i.name] = i
+   end
+   
+   for _, o in ipairs(fb_spec.output_specs) do
+      fb_spec.output_specs[o.name] = o
+   end
+   
+   for _, v in ipairs(fb_spec.state_var_specs) do
+      fb_spec.state_var_specs[v.name] = v
+   end
+   
    return fb_spec
 end
 
@@ -192,9 +204,68 @@ function fc_spec_new(name, inputs, outputs, function_blocks, links)
    --       * Input and output names exist
    --       * Datatypes match
 
+   -- Ensure that the names of inputs, outputs and function blocks are unique
+   local blocks = {}
+   for _, b in ipairs(fc_spec.inputs) do
+      local name=b[1]
+      if blocks[name] ~= nil then
+         print(name .. ' is not unique.')
+      else
+         blocks[name] = b
+      end
+   end
+   for _, b in ipairs(fc_spec.outputs) do
+      local name=b[1]
+      if blocks[name] ~= nil then
+         print(name .. ' is not unique.')
+      else
+         blocks[name] = b
+      end
+   end
+   for _, b in ipairs(fc_spec.function_blocks) do
+      local name=b[1]
+      if blocks[name] ~= nil then
+         print(name .. ' is not unique.')
+      else
+         blocks[name] = b
+      end
+   end
+
+   -- Verify that all of the links are valid, 
+   -- TODO: Do something with the links...
+   for _, l in ipairs(fc_spec.links) do
+      local source=l[1]
+      local dest=l[2]
+
+      local source_name=source[1]
+      local source_port=source[2]
+      local b = blocks[source_name]
+      if b == nil then
+         print(source_name .. ' does not exist.')
+      else
+         local specs = b[2].output_specs
+         local p = specs[source_port]
+         if p == nil then
+            print(source_name .. ' has no output port named ' .. source_port .. '.')
+         end
+      end
+
+      local dest_name=dest[1]
+      local dest_port=dest[2]
+      local b = blocks[dest_name]
+      if b == nil then
+         print(dest_name .. ' does not exist.')
+      else
+         local specs = b[2].input_specs
+         local p = specs[dest_port]
+         if p == nil then
+            print(source_name .. ' has no input port named ' .. source_port .. '.')
+         end
+      end
+   end
+
    return fc_spec
 end
-
 
 
 
