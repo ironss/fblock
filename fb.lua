@@ -52,7 +52,7 @@ end
 -- * call the function, passing a table as a parameter with positional parameters
 -- * call the function, passing a table as a parameter with named parameters
 
-local function fb_spec_new(name, input_specs, output_specs, state_var_specs, algorithm, reset)
+local function fb_spec_new(name, inputs, outputs, state_vars, algorithm, reset)
    local fb_spec = {}
    
    if type(name) == "table" then
@@ -65,16 +65,16 @@ local function fb_spec_new(name, input_specs, output_specs, state_var_specs, alg
          fb_spec.algorithm = t[5]
       else
          fb_spec.name = t.name
-         fb_spec.input_specs = t.input_specs
-         fb_spec.output_specs = t.output_specs
-         fb_spec.state_var_specs = t.state_var_specs
+         fb_spec.input_specs = t.inputs
+         fb_spec.output_specs = t.outputs
+         fb_spec.state_var_specs = t.state_vars
          fb_spec.algorithm = t.algorithm
       end
    else
       fb_spec.name = name
-      fb_spec.input_specs = input_specs
-      fb_spec.output_specs = output_specs
-      fb_spec.state_var_specs = state_var_specs
+      fb_spec.input_specs = inputs
+      fb_spec.output_specs = outputs
+      fb_spec.state_var_specs = state_vars
       fb_spec.algorithm = algorithm
    end
 
