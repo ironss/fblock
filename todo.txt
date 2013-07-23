@@ -1,0 +1,7 @@
+1. Add logging rather than random print statements
+
+2. More and better tests
+
+3. Check memory usage
+
+4. Check that implementation is similar to class diagram
