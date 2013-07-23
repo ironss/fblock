@@ -239,28 +239,46 @@ function fc_spec_new(name, inputs, outputs, function_blocks, links)
 
       local source_name=source[1]
       local source_port=source[2]
+      local source_datatype = '?'
+
+      local dest_name=dest[1]
+      local dest_port=dest[2]
+      local dest_datatype = '?'
+
+      local link_description = fc_spec.name .. ': ' .. source_name .. '.' .. source_port .. '(' .. source_datatype ..  ') -> ' .. dest_name .. '.' .. dest_port .. '(' .. dest_datatype .. ')'
+      
       local b = blocks[source_name]
       if b == nil then
-         print(source_name .. ' does not exist.')
+         print(link_description .. ': ' .. source_name .. ' does not exist.')
       else
          local specs = b[2].output_specs
          local p = specs[source_port]
          if p == nil then
             print(source_name .. ' has no output port named ' .. source_port .. '.')
+         else
+            source_datatype = p.datatype
          end
       end
 
-      local dest_name=dest[1]
-      local dest_port=dest[2]
+      local link_description = fc_spec.name .. ': ' .. source_name .. '.' .. source_port .. '(' .. source_datatype ..  ') -> ' .. dest_name .. '.' .. dest_port .. '(' .. dest_datatype .. ')'
+      
       local b = blocks[dest_name]
       if b == nil then
-         print(dest_name .. ' does not exist.')
+         print(link_description .. ': ' .. dest_name .. ' does not exist.')
       else
          local specs = b[2].input_specs
          local p = specs[dest_port]
          if p == nil then
-            print(source_name .. ' has no input port named ' .. source_port .. '.')
+            print(link_description .. ': ' .. source_name .. ' has no input port named ' .. source_port .. '.')
+         else
+            dest_datatype = p.datatype
          end
+      end
+
+      local link_description = fc_spec.name .. ': ' .. source_name .. '.' .. source_port .. '(' .. source_datatype ..  ') -> ' .. dest_name .. '.' .. dest_port .. '(' .. dest_datatype .. ')'
+      
+      if source_datatype ~= dest_datatype then
+         print(link_description .. ': ' .. 'Datatypes are different.')
       end
    end
 
