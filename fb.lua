@@ -240,9 +240,6 @@ local function fc_spec_new(name, inputs, outputs, function_blocks, links)
       fc_spec.links = links or {}
    end
    
-   -- TODO: Name is mandatory
-   -- TODO: Inputs, outputs, function blocks and links are mandatory
-
    -- Validation
    local valid=true
    local msgs = {}
