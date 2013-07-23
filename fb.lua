@@ -131,8 +131,10 @@ end
 
 local function data_item_new(name, data_spec)
    local data_item = {}
+   
    data_item.name = name
    data_item.spec = data_spec
+   data_item.drives = {}
    
    return data_item
 end
@@ -144,13 +146,15 @@ local function fb_new(name, fb_spec)
    local fb_inst = {}
    
    fb_inst.name = name
-   fb_inst.data_item = {}
-
+   
+   local data_items = {}
    for _, data_spec in pairs(fb_spec.data_specs) do
       local data_item_name = name .. '.' .. data_spec.name
-      fb_inst.data_item = data_item_new(data_item_name, data_spec)
+      print(data_item_name)
+      data_items[data_item_name] = data_item_new(data_item_name, data_spec)
    end
 
+   fb_inst.data_items = data_items
    return fb_inst
 end
 
@@ -340,29 +344,63 @@ end
 -- Create a function chart run-time instance
 -- -----------------------------------------
 
-serpent = require 'serpent'
-
 function fc_instance_new(name, fc_spec)
-   print(serpent.block(fc_spec))
-
+   local blocks = {}
+   local data_items = {}
+   
    local inputs = {}
    for _, i in ipairs(fc_spec.inputs) do
-      inputs[#inputs+1] = fb_new(name, i[2])
+      local block_name = name .. '.' .. i[1]
+      local fb = fb_new(block_name, i[2])
+      inputs[#inputs+1] = fb
+      blocks[block_name] = fb
+      for data_item_name, data_item in pairs(fb.data_items) do
+         data_items[data_item_name] = data_item
+      end
    end
    
    local outputs = {}
    for _, o in ipairs(fc_spec.outputs) do
-      outputs[#outputs+1] = fb_new(name, o[2])
+      local block_name = name .. '.' .. o[1]
+      local fb = fb_new(block_name, o[2])
+      outputs[#outputs+1] = fb
+      blocks[block_name] = fb
+      for data_item_name, data_item in pairs(fb.data_items) do
+         data_items[data_item_name] = data_item
+      end
    end
    
-   local blocks = {}
-   for _, b in ipairs(fc_spec.function_blocks) do
-      blocks[#blocks+1] = fb_new(name, b[2])
+   local functions = {}
+   for _, f in ipairs(fc_spec.function_blocks) do
+      local block_name = name .. '.' .. f[1]
+      local fb = fb_new(block_name, f[2])
+      functions[#functions+1] = fb
+      blocks[block_name] = fb
+      for data_item_name, data_item in pairs(fb.data_items) do
+         data_items[data_item_name] = data_item
+      end
    end
 
-   local links = {}
    for _, l in ipairs(fc_spec.links) do
---      links[#links+1] = link_new(l)
+      local source=l[1]
+      local dest=l[2]
+
+      local source_name=source[1]
+      local source_port=source[2]
+
+      local dest_name=dest[1]
+      local dest_port=dest[2]
+
+      local source_full_name = name .. '.' .. source_name .. '.' .. source_port
+      local dest_full_name = name .. '.' .. dest_name .. '.' .. dest_port
+      
+      print(source_full_name .. ' -> ' .. dest_full_name)
+      
+      local source_item = data_items[source_full_name]
+      local dest_item   = data_items[dest_full_name]
+      
+      source_item.drives[#source_item.drives+1] = dest_item
+      dest_item.is_driven_by = source_item
    end
 
    local fc_inst = 
@@ -370,7 +408,8 @@ function fc_instance_new(name, fc_spec)
       name = name,
       inputs = inputs,
       outputs = outputs,
-      blocks = blocks
+      blocks = blocks,
+      data_items = data_items,
    }
 
    return fc_inst
@@ -378,7 +417,7 @@ end
 
 function fc_step(self)
    fbs_to_run = {}
-   for _, fb in ipairs(self.fblocks) do
+   for _, fb in ipairs(self.blocks) do
       fb.has_run = false
       fbs_to_run[#fbs_to_run+1] = fb
    end

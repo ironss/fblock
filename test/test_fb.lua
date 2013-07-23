@@ -367,7 +367,7 @@ Test_fc_instance = {}
 
 function Test_fc_instance:test_create()
    local ramp1 = fb.fb_spec_new{
-      name='Ramp input 1',
+      name='Ramp 1',
       inputs=nil,
       outputs={
          fb.data_spec_new{ 'q', 'real', 0 },
@@ -385,7 +385,7 @@ function Test_fc_instance:test_create()
    }
    
    local ramp2 = fb.fb_spec_new{
-      name='Ramp input 2',
+      name='Ramp 2',
       inputs=nil,
       outputs={
          fb.data_spec_new{ 'q', 'real', 0 },
@@ -403,7 +403,7 @@ function Test_fc_instance:test_create()
    }
 
    local add = fb.fb_spec_new{
-      name="+",
+      name="Add",
       inputs={
          fb.data_spec_new{ "a", "real", 0 },
          fb.data_spec_new{ "b", "real", 0 },
@@ -418,7 +418,7 @@ function Test_fc_instance:test_create()
    }
 
    local subtract = fb.fb_spec_new{
-      name="-",
+      name="Sub",
       inputs={
          fb.data_spec_new{ "a", "real", 0 },
          fb.data_spec_new{ "b", "real", 0 },
@@ -433,7 +433,7 @@ function Test_fc_instance:test_create()
    }
 
    local printer = fb.fb_spec_new{
-      name='Printing output',
+      name='Printer',
       inputs={
          fb.data_spec_new{ 'x', 'real', 0 },
       },
@@ -445,10 +445,10 @@ function Test_fc_instance:test_create()
    }
 
    local fc_spec_1 = fb.fc_spec_new{
-      name='FC spec 1',
+      name='Chart_1',
       inputs={
          { 'R1', ramp1 },
-         { 'R2', ramp2 },
+         { 'R2', ramp1 },
       },
       outputs={
          { 'P1', printer },
@@ -468,9 +468,12 @@ function Test_fc_instance:test_create()
       },
    }
 
-   local fc_inst_1 = fb.fc_instance_new('Test 1', fc_spec_1)
+   local fc_inst_1 = fb.fc_instance_new('Test_1', fc_spec_1)
    
-   assertEquals(fc_inst_1.name, 'Test 1')
+   assertEquals(fc_inst_1.name, 'Test_1')
+   assertEquals(fc_inst_1.data_items['Test_1.ADD1.a'].is_driven_by, fc_inst_1.data_items['Test_1.R1.q'])
+   
+   print(serpent.block(fc_inst_1.data_items, {nocode=true}))
 end
 
  
