@@ -91,19 +91,59 @@ local function fb_spec_new(name, inputs, outputs, state_vars, algorithm, reset)
       fb_spec.reset = fb_reset_default
    end
 
-   for _, i in ipairs(fb_spec.input_specs) do
-      fb_spec.input_specs[i.name] = i
+   local valid = true
+   local msgs = {}
+   local data_specs = {}
+   for _, s in ipairs(fb_spec.input_specs) do
+      s.fb_spec = fb_spec
+      fb_spec.input_specs[s.name] = s
+      if data_specs[s.name] ~= nil then
+         valid = false
+         msgs[#msgs+1] = 'Duplicate name: ' .. s.name
+      else
+         data_specs[s.name] = s
+      end
    end
    
-   for _, o in ipairs(fb_spec.output_specs) do
-      fb_spec.output_specs[o.name] = o
+   for _, s in ipairs(fb_spec.output_specs) do
+      s.fb_spec = fb_spec
+      fb_spec.output_specs[s.name] = s
+      if data_specs[s.name] ~= nil then
+         valid = false
+         msgs[#msgs+1] = 'Duplicate name: ' .. s.name
+      else
+         data_specs[s.name] = s
+      end
    end
    
-   for _, v in ipairs(fb_spec.state_var_specs) do
-      fb_spec.state_var_specs[v.name] = v
+   for _, s in ipairs(fb_spec.state_var_specs) do
+      s.fb_spec = fb_spec
+      fb_spec.state_var_specs[s.name] = s
+      if data_specs[s.name] ~= nil then
+         valid = false
+         msgs[#msgs+1] = 'Duplicate name: ' .. s.name
+      else
+         data_specs[s.name] = s
+      end
    end
    
-   return fb_spec
+   fb_spec.data_specs = data_specs
+   
+   if valid then
+      return fb_spec
+   else
+      return err, table.concat(msgs, '\n')
+   end
+end
+
+
+
+local function fb_new(name, fb_spec)
+   local fb_inst = {}
+   
+   fb_inst.name = name
+
+   return fb_inst
 end
 
 
@@ -141,12 +181,10 @@ local function data_spec_new(name, datatype, default_value)
       data_spec.default_value = default_value
    end
 
-   -- TODO: Must provide a name
-   -- TODO: Must provide an algorithm
+   data_spec.is_connected = false
 
    return data_spec
 end
-
 
 
 -- Data items
@@ -169,10 +207,25 @@ end
 
 
 
+local function fc_find_port(fc_spec, block_name, port_name)
+   local b = fc_spec.blocks[block_name]
+   if b == nil then
+      return nil, block_name .. ' does not exist.'
+   else
+      local data_specs = b[2].data_specs
+      local p = data_specs[port_name]
+      if p == nil then
+         return nil, block_name .. ' has no port named ' .. port_name .. '.'
+      else
+         return p
+      end
+   end
+end
+
 -- Specification for a new function chart
 -- --------------------------------------
 
-function fc_spec_new(name, inputs, outputs, function_blocks, links)
+local function fc_spec_new(name, inputs, outputs, function_blocks, links)
    local fc_spec = {}
 
    if type(name) == 'table' then
@@ -204,12 +257,17 @@ function fc_spec_new(name, inputs, outputs, function_blocks, links)
    --       * Input and output names exist
    --       * Datatypes match
 
+   -- Validation
+   local valid=true
+   local msgs = {}
+
    -- Ensure that the names of inputs, outputs and function blocks are unique
    local blocks = {}
    for _, b in ipairs(fc_spec.inputs) do
       local name=b[1]
       if blocks[name] ~= nil then
-         print(name .. ' is not unique.')
+         valid = false
+         msgs[#msgs+1] = name .. ' is not unique.'
       else
          blocks[name] = b
       end
@@ -217,7 +275,8 @@ function fc_spec_new(name, inputs, outputs, function_blocks, links)
    for _, b in ipairs(fc_spec.outputs) do
       local name=b[1]
       if blocks[name] ~= nil then
-         print(name .. ' is not unique.')
+         valid = false
+         msgs[#msgs+1] = name .. ' is not unique.'
       else
          blocks[name] = b
       end
@@ -225,14 +284,15 @@ function fc_spec_new(name, inputs, outputs, function_blocks, links)
    for _, b in ipairs(fc_spec.function_blocks) do
       local name=b[1]
       if blocks[name] ~= nil then
-         print(name .. ' is not unique.')
+         valid = false
+         msgs[#msgs+1] = name .. ' is not unique.'
       else
          blocks[name] = b
       end
    end
+   fc_spec.blocks = blocks
 
    -- Verify that all of the links are valid, 
-   -- TODO: Do something with the links...
    for _, l in ipairs(fc_spec.links) do
       local source=l[1]
       local dest=l[2]
@@ -246,46 +306,72 @@ function fc_spec_new(name, inputs, outputs, function_blocks, links)
       local dest_datatype = '?'
 
       local link_description = fc_spec.name .. ': ' .. source_name .. '.' .. source_port .. '(' .. source_datatype ..  ') -> ' .. dest_name .. '.' .. dest_port .. '(' .. dest_datatype .. ')'
-      
-      local b = blocks[source_name]
-      if b == nil then
-         print(link_description .. ': ' .. source_name .. ' does not exist.')
+
+      local p, err = fc_find_port(fc_spec, source_name, source_port)
+      if p == nil then
+         valid = false
+         msgs[#msgs+1] = link_description .. ': ' .. err
       else
-         local specs = b[2].output_specs
-         local p = specs[source_port]
-         if p == nil then
-            print(source_name .. ' has no output port named ' .. source_port .. '.')
-         else
-            source_datatype = p.datatype
-         end
+         source_datatype = p.datatype
       end
 
       local link_description = fc_spec.name .. ': ' .. source_name .. '.' .. source_port .. '(' .. source_datatype ..  ') -> ' .. dest_name .. '.' .. dest_port .. '(' .. dest_datatype .. ')'
       
+      local p, err = fc_find_port(fc_spec, dest_name, dest_port)
       local b = blocks[dest_name]
-      if b == nil then
-         print(link_description .. ': ' .. dest_name .. ' does not exist.')
+      if p == nil then
+         valid = false
+         msgs[#msgs+1] = link_description .. ': ' .. err
       else
-         local specs = b[2].input_specs
-         local p = specs[dest_port]
-         if p == nil then
-            print(link_description .. ': ' .. source_name .. ' has no input port named ' .. source_port .. '.')
-         else
-            dest_datatype = p.datatype
-         end
+         dest_datatype = p.datatype
       end
 
       local link_description = fc_spec.name .. ': ' .. source_name .. '.' .. source_port .. '(' .. source_datatype ..  ') -> ' .. dest_name .. '.' .. dest_port .. '(' .. dest_datatype .. ')'
       
       if source_datatype ~= dest_datatype then
-         print(link_description .. ': ' .. 'Datatypes are different.')
+         valid = false
+         msgs[#msgs+1] = link_description .. ': ' .. 'Datatypes are different.'
       end
    end
 
-   return fc_spec
+   if valid then
+      return fc_spec
+   else
+      return nil, table.concat(msgs, '\n')
+   end
 end
 
 
+-- Create a function chart run-time instance
+-- -----------------------------------------
+
+function fc_instance_new(name, fc_spec)
+   local fc_inst = {}
+   
+   fc_inst.name = name
+
+   local inputs = {}
+   for _, i in ipairs(fc_spec.inputs) do
+      inputs[#inputs+1] = fb_new(i)
+   end
+   
+   local outputs = {}
+   for _, o in ipairs(fc_spec.outputs) do
+      outputs[#outputs+1] = fb_new(o)
+   end
+   
+   local blocks = {}
+   for _, b in ipairs(fc_spec.function_blocks) do
+      blocks[#blocks+1] = fb_new(b)
+   end
+
+   local links = {}
+   for _, l in ipairs(fc_spec.links) do
+--      links[#links+1] = link_new(l)
+   end
+   
+   return fc_inst
+end
 
 function fc_step(self)
    fbs_to_run = {}
@@ -307,6 +393,7 @@ function fc_step(self)
    end
 end
 
+
 function fc_reset(self)
 
 end
@@ -318,6 +405,7 @@ local fb =
    data_spec_new = data_spec_new,
    fb_spec_new = fb_spec_new,
    fc_spec_new = fc_spec_new,
+   fc_instance_new = fc_instance_new,
 }
 
 return fb
