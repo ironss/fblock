@@ -126,11 +126,30 @@ local function fb_spec_new(name, inputs, outputs, state_vars, algorithm, reset)
 end
 
 
+-- Data item factory
+-- Given a data item specification, create a new data item
+
+local function data_item_new(name, data_spec)
+   local data_item = {}
+   data_item.name = name
+   data_item.spec = data_spec
+   
+   return data_item
+end
+
+
+
 
 local function fb_new(name, fb_spec)
    local fb_inst = {}
    
    fb_inst.name = name
+   fb_inst.data_item = {}
+
+   for _, data_spec in pairs(fb_spec.data_specs) do
+      local data_item_name = name .. '.' .. data_spec.name
+      fb_inst.data_item = data_item_new(data_item_name, data_spec)
+   end
 
    return fb_inst
 end
@@ -182,18 +201,6 @@ local function data_item_reset(data_item)
    data_item.default_value = data_item.data_spec.default_value
    data_item.has_changed = false
 end
-
--- Data item factory
--- Given a data item specification, create a new data item
-
-local function data_item_new(data_spec)
-   local data_item = {}
-   data_item.spec = data_spec
-   data_item_reset(self)
-   
-   return data_item
-end
-
 
 
 local function fc_find_port(fc_spec, block_name, port_name)
@@ -333,31 +340,39 @@ end
 -- Create a function chart run-time instance
 -- -----------------------------------------
 
+serpent = require 'serpent'
+
 function fc_instance_new(name, fc_spec)
-   local fc_inst = {}
-   
-   fc_inst.name = name
+   print(serpent.block(fc_spec))
 
    local inputs = {}
    for _, i in ipairs(fc_spec.inputs) do
-      inputs[#inputs+1] = fb_new(i)
+      inputs[#inputs+1] = fb_new(name, i[2])
    end
    
    local outputs = {}
    for _, o in ipairs(fc_spec.outputs) do
-      outputs[#outputs+1] = fb_new(o)
+      outputs[#outputs+1] = fb_new(name, o[2])
    end
    
    local blocks = {}
    for _, b in ipairs(fc_spec.function_blocks) do
-      blocks[#blocks+1] = fb_new(b)
+      blocks[#blocks+1] = fb_new(name, b[2])
    end
 
    local links = {}
    for _, l in ipairs(fc_spec.links) do
 --      links[#links+1] = link_new(l)
    end
-   
+
+   local fc_inst = 
+   {
+      name = name,
+      inputs = inputs,
+      outputs = outputs,
+      blocks = blocks
+   }
+
    return fc_inst
 end
 
