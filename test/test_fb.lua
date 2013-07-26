@@ -511,7 +511,7 @@ function Test_fc_instance:test_create()
       outputs=nil,
       state_vars=nil,
       algorithm=function(data)
-         print(data.x.value)
+--         print(data.x.value)
          data.x.has_changed = false
       end
    }
@@ -572,6 +572,5 @@ function Test_fc_instance:test_create()
    assertEquals(fc_inst_1.data_items['Test_1.P4.x'].value, -2)
 end
 
- 
 return LuaUnit:run()
 
