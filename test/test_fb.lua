@@ -405,19 +405,11 @@ function Test_fc_instance:test_create()
          fb.data_spec_new{ 's', 'real', 0 },
       },
       algorithm=function(data)
-         data.q.value = data.s.value
-         data.q.has_changed = true
+         data.q:set(data.s.value)
 
          data.s.value = data.s.value + 1
          if data.s.value >= 103 then
             data.s.value = data.s.value - 103
-         end
-         
-         for _, item in ipairs(data.q.drives) do
-            item.value = data.q.value
-            item.has_changed = true
-            item.fblock.has_changed = true
-            item.fblock.fc_inst.has_changed = true
          end
       end,
       time = 0,
@@ -433,18 +425,11 @@ function Test_fc_instance:test_create()
          fb.data_spec_new{ 's', 'real', 0 },
       },
       algorithm=function(data)
-         data.q.value = data.s.value
-         data.q.has_changed = true
+         data.q:set(data.s.value)
 
          data.s.value = data.s.value + 1.5
          if data.s.value >= 79 then
             data.s.value = data.s.value - 79
-         end
-
-         for _, item in ipairs(data.q.drives) do
-            item.value = data.q.value
-            item.has_changed = true
-            item.fblock.has_changed = true
          end
       end,
       time = 0,
@@ -462,16 +447,10 @@ function Test_fc_instance:test_create()
       state_vars=nil,
       algorithm=function(data)
          if data.a.value ~= nil and data.b.value ~= nil then
-            data.q.value = data.a.value + data.b.value
-            data.q.has_changed = true
+            data.q:set(data.a.value + data.b.value)
             
             data.a.has_changed = false
             data.b.has_changed = false
-            for _, item in ipairs(data.q.drives) do
-               item.value = data.q.value
-               item.has_changed = true
-               item.fblock.has_changed = true
-            end
          end
       end,
    }

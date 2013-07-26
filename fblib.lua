@@ -27,20 +27,13 @@ local ramp = fb.fb_spec_new{
       
    },
    algorithm=function(data)
-      data.q.value = data.s.value
-      data.q.has_changed = true
+      data.q:set(data.s.value)
 
-      data.s.value = data.s.value + data.inc.value
-      if data.s.value >= data.max.value then
-         data.s.value = data.s.value - (data.max.value - data.min.value)
+      local s = data.s.value + data.inc.value
+      if s >= data.max.value then
+         s = s - (data.max.value - data.min.value)
       end
-      
-      for _, item in ipairs(data.q.drives) do
-         item.value = data.q.value
-         item.has_changed = true
-         item.fblock.has_changed = true
-         item.fblock.fc_inst.has_changed = true
-      end
+      data.s:set(s)
    end,
    time = 0,
 }
@@ -77,16 +70,10 @@ local add = fb.fb_spec_new{
    state_vars=nil,
    algorithm=function(data)
       if data.a.value ~= nil and data.b.value ~= nil then
-         data.q.value = data.a.value + data.b.value
-         data.q.has_changed = true
-         
+         data.q:set(data.a.value + data.b.value)
+
          data.a.has_changed = false
          data.b.has_changed = false
-         for _, item in ipairs(data.q.drives) do
-            item.value = data.q.value
-            item.has_changed = true
-            item.fblock.has_changed = true
-         end
       end
    end,
 }

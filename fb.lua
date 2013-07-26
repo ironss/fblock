@@ -3,14 +3,13 @@
 Function block processing
 #########################
 
-1. Built-in function block
-2. Specify a function block
-3. Specify a function chart
+1. Built-in function block (/)
+2. Specify a function block (/)
+3. Specify a function chart (/)
 4. Use a function chart as a function block
 
-5. Instantiate a function chart
-6. Single-step a function chart
-
+5. Instantiate a function chart (/)
+6. Single-step a function chart (/)
 --]]
 
 
@@ -134,6 +133,15 @@ local function fb_spec_new(name, inputs, outputs, state_vars, algorithm, reset, 
    end
 end
 
+local function data_item_set(self, value)
+   self.value = value
+   self.has_changed = true
+   for _, item in ipairs(self.drives) do
+      item.value = self.value
+      item.has_changed = true
+      item.fblock.has_changed = true
+   end
+end
 
 -- Data items
 -- Given a data item specification, create a new data item
@@ -144,6 +152,7 @@ local function data_item_new(name, fblock, data_spec)
    data_item.name = name
    data_item.fblock = fblock
    data_item.data_spec = data_spec
+   data_item.set = data_item_set
    data_item.drives = {}
    
    return data_item
