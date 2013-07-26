@@ -426,48 +426,47 @@ local function fc_instance_new(name, fc_spec)
    fc_inst.blocks = blocks
    fc_inst.data_items = data_items
 
+   fc_inst.reset = function(fc)
+         for _, fb in pairs(fc.blocks) do
+         fb_reset(fb)
+      end
+      fc.has_changed = false
+   end
+
+   fc_inst.step = function(self)
+      fbs_to_run = {}
+      for _, fb in ipairs(self.functions) do
+         fbs_to_run[#fbs_to_run+1] = fb
+      end
+
+      for _, fb  in ipairs(self.inputs) do
+         if fb.has_changed or fb.fb_spec.time == 0 then
+            fb.fb_spec.algorithm(fb.data)
+            fb.has_changed = false
+         end
+      end
+
+      for i, fb in ipairs(fbs_to_run) do
+         if fb.has_changed or fb.fb_spec.time == 0 then
+            fb.fb_spec.algorithm(fb.data)
+            fb.has_changed = false
+         end
+      end
+
+      for _, fb in ipairs(self.outputs) do
+         if fb.has_changed or fb.fb_spec.time == 0 then
+            fb.fb_spec.algorithm(fb.data)
+            fb.has_changed = false
+         end
+      end
+   end
+
    return fc_inst
 end
 
 
 
-local function fc_reset(fc)
-   for _, fb in pairs(fc.blocks) do
-      fb_reset(fb)
-   end
-   fc.has_changed = false
-end
-
-
-
-local function fc_step(self)
-   fbs_to_run = {}
-   for _, fb in ipairs(self.functions) do
-      fbs_to_run[#fbs_to_run+1] = fb
-   end
-
-   for _, fb  in ipairs(self.inputs) do
-      if fb.has_changed or fb.fb_spec.time == 0 then
-         fb.fb_spec.algorithm(fb.data)
-         fb.has_changed = false
-      end
-   end
-
-   for i, fb in ipairs(fbs_to_run) do
-      if fb.has_changed or fb.fb_spec.time == 0 then
-         fb.fb_spec.algorithm(fb.data)
-         fb.has_changed = false
-      end
-   end
-
-   for _, fb in ipairs(self.outputs) do
-      if fb.has_changed or fb.fb_spec.time == 0 then
-         fb.fb_spec.algorithm(fb.data)
-         fb.has_changed = false
-      end
-   end
-end
-
+   
 
 
 local fb = 
@@ -476,8 +475,6 @@ local fb =
    fb_spec_new = fb_spec_new,
    fc_spec_new = fc_spec_new,
    fc_instance_new = fc_instance_new,
-   fc_reset = fc_reset,
-   fc_step = fc_step,
 }
 
 return fb
