@@ -14,13 +14,17 @@ Function block processing
 --]]
 
 
-local function fb_reset_default(state_vars)
-   for _, v in state_vars do
-      v.value = v.spec.default_value
-      v.has_changed = false
-   end
+local function data_item_reset(data_item)
+   data_item.value = data_item.data_spec.default_value
+   data_item.has_changed = false
 end
 
+local function fb_reset_default(fb)
+   for _, item in pairs(fb.data_items) do
+      data_item_reset(item)
+   end
+   fb.has_changed = false
+end
 
 
 -- Specification for a function block
@@ -72,7 +76,9 @@ local function fb_spec_new(name, inputs, outputs, state_vars, algorithm, reset, 
       fb_spec.time = time
    end
 
-   if type(fb_spec.reset) ~= 'function' then
+   if type(fb_spec.reset) == 'function' or type(fb_spec.reset) == 'table' then
+      fb_spec.reset = reset
+   else
       -- TODO: Log that we are using default reset function
       fb_spec.reset = fb_reset_default
    end
@@ -144,15 +150,7 @@ local function data_item_new(name, fblock, data_spec)
 end
 
 
-
 -- Data items
-
-local function data_item_reset(data_item)
-   data_item.value = data_item.data_spec.default_value
-   data_item.has_changed = false
-end
-
-
 
 local function fb_new(name, fb_spec, fc_inst)
    local fb_inst = {}
@@ -177,10 +175,13 @@ end
 
 
 local function fb_reset(fb)
-   for _, item in pairs(fb.data_items) do
-      data_item_reset(item)
+   if type(fb.reset) == 'function' then
+      fb.reset(fb)
+   elseif type (fb.reset) == 'table' then
+      
+   else
+      fb_reset_default(fb)
    end
-   fb.has_changed = false
 end
 
 -- Specification for a data item
@@ -465,8 +466,6 @@ local function fc_step(self)
          fb.has_changed = false
       end
    end
-   
-   print('-----')
 end
 
 

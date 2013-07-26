@@ -550,13 +550,24 @@ function Test_fc_instance:test_create()
    assertEquals(fc_inst_1.data_items['Test_1.ADD1.a'].is_driven_by, fc_inst_1.data_items['Test_1.R1.q'])
 
    fb.fc_reset(fc_inst_1)
-   for s = 1, 10 do
-      fb.fc_step(fc_inst_1)
-   end
+
+   fb.fc_step(fc_inst_1)
+   assertEquals(fc_inst_1.data_items['Test_1.P3.x'].value, 0)
+   assertEquals(fc_inst_1.data_items['Test_1.P4.x'].value, 0)
+
+   fb.fc_step(fc_inst_1)
+   assertEquals(fc_inst_1.data_items['Test_1.P3.x'].value, 2.5)
+   assertEquals(fc_inst_1.data_items['Test_1.P4.x'].value, -0.5)
+
+   fb.fc_step(fc_inst_1)
+   assertEquals(fc_inst_1.data_items['Test_1.P3.x'].value, 5)
+   assertEquals(fc_inst_1.data_items['Test_1.P4.x'].value, -1)
+
+   fb.fc_step(fc_inst_1)
+   assertEquals(fc_inst_1.data_items['Test_1.P3.x'].value, 7.5)
+   assertEquals(fc_inst_1.data_items['Test_1.P4.x'].value, -1.5)
 end
 
  
-
-
 return LuaUnit:run()
 
