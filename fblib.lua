@@ -3,11 +3,15 @@
 local fb = require('fb')
 
 
--- Generators
--- ----------
+-- Sources
+-- -------
 -- Constant
+-- Step
 -- Ramp
+-- Square
 -- Sine
+-- File
+-- Socket
 
 local ramp = fb.fb_spec_new{
    name='Ramp',
@@ -42,6 +46,23 @@ local ramp = fb.fb_spec_new{
 }
 
 
+-- Sinks
+-- -----
+-- Null sink
+-- File
+-- Logger
+
+local sink = fb.fb_spec_new{
+   name='Sink',
+   inputs={
+      fb.data_spec_new{ 'a', 'real', nil },
+   },
+   outputs=nil, 
+   state_vars=nil,
+   algorithm=nil,
+}
+
+
 -- Arithmetic
 
 local add = fb.fb_spec_new{
@@ -54,64 +75,29 @@ local add = fb.fb_spec_new{
       fb.data_spec_new{ "q", "real", 0 },
    },
    state_vars=nil,
-   algorithm=function(inputs, outputs, state_vars)
-      outputs.q = inputs.a + inputs.b
+   algorithm=function(data)
+      if data.a.value ~= nil and data.b.value ~= nil then
+         data.q.value = data.a.value + data.b.value
+         data.q.has_changed = true
+         
+         data.a.has_changed = false
+         data.b.has_changed = false
+         for _, item in ipairs(data.q.drives) do
+            item.value = data.q.value
+            item.has_changed = true
+            item.fblock.has_changed = true
+         end
+      end
    end,
 }
 
-local subtract = fb.fb_spec_new{
-   name="subtract",
-   inputs={
-      fb.data_spec_new{ "a", "real", 0 },
-      fb.data_spec_new{ "b", "real", 0 },
-   },
-   outputs={
-      fb.data_spec_new{ "q", "real", 0 },
-   },
-   state_vars=nil,
-   algorithm=function(inputs, outputs, state_vars)
-      outputs.q = inputs.a - inputs.b
-   end,
-}
-
-local multiply = fb.fb_spec_new{
-   name="multiply",
-   inputs={
-      fb.data_spec_new{ "a", "real", 0 },
-      fb.data_spec_new{ "b", "real", 0 },
-   },
-   outputs={
-      fb.data_spec_new{ "q", "real", 0 },
-   },
-   state_vars=nil,
-   algorithm=function(inputs, outputs, state_vars)
-      outputs.q = inputs.a * inputs.b
-   end,
-}
-
-local divide = fb.fb_spec_new{
-   name="divide",
-   inputs={
-      fb.data_spec_new{ "a", "real", 0 },
-      fb.data_spec_new{ "b", "real", 0 },
-   },
-   outputs={
-      fb.data_spec_new{ "q", "real", 0 },
-   },
-   state_vars=nil,
-   algorithm=function(inputs, outputs, state_vars)
-      outputs.q = inputs.a / inputs.b
-   end,
-}
 
 
 local fblib = 
 {
    ramp = ramp,
+   sink = sink,
    add = add,
-   subtract = subtract,
-   multiply = multiply,
-   divide = divide,
 }
 
 return fblib
