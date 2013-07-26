@@ -548,6 +548,13 @@ function Test_fc_instance:test_create()
    
    assertEquals(fc_inst_1.name, 'Test_1')
    assertEquals(fc_inst_1.data_items['Test_1.ADD1.a'].is_driven_by, fc_inst_1.data_items['Test_1.R1.q'])
+   assertEquals(fc_inst_1.data_items['Test_1.ADD1.b'].is_driven_by, fc_inst_1.data_items['Test_1.R2.q'])
+   assertEquals(fc_inst_1.data_items['Test_1.SUB1.a'].is_driven_by, fc_inst_1.data_items['Test_1.R1.q'])
+   assertEquals(fc_inst_1.data_items['Test_1.SUB1.b'].is_driven_by, fc_inst_1.data_items['Test_1.R2.q'])
+   assertEquals(fc_inst_1.data_items['Test_1.P1.x'].is_driven_by, fc_inst_1.data_items['Test_1.R1.q'])
+   assertEquals(fc_inst_1.data_items['Test_1.P2.x'].is_driven_by, fc_inst_1.data_items['Test_1.R2.q'])
+   assertEquals(fc_inst_1.data_items['Test_1.P3.x'].is_driven_by, fc_inst_1.data_items['Test_1.ADD1.q'])
+   assertEquals(fc_inst_1.data_items['Test_1.P4.x'].is_driven_by, fc_inst_1.data_items['Test_1.SUB1.q'])
 
    fc_inst_1:reset()
 
