@@ -526,14 +526,14 @@ function Test_fc_instance:test_create()
    local fc_inst_1 = fb.fc_instance_new('Test_1', fc_spec_1)
    
    assertEquals(fc_inst_1.name, 'Test_1')
-   assertEquals(fc_inst_1.data_items['Test_1.ADD1.a'].is_driven_by, fc_inst_1.data_items['Test_1.R1.q'])
-   assertEquals(fc_inst_1.data_items['Test_1.ADD1.b'].is_driven_by, fc_inst_1.data_items['Test_1.R2.q'])
-   assertEquals(fc_inst_1.data_items['Test_1.SUB1.a'].is_driven_by, fc_inst_1.data_items['Test_1.R1.q'])
-   assertEquals(fc_inst_1.data_items['Test_1.SUB1.b'].is_driven_by, fc_inst_1.data_items['Test_1.R2.q'])
-   assertEquals(fc_inst_1.data_items['Test_1.P1.x'].is_driven_by, fc_inst_1.data_items['Test_1.R1.q'])
-   assertEquals(fc_inst_1.data_items['Test_1.P2.x'].is_driven_by, fc_inst_1.data_items['Test_1.R2.q'])
-   assertEquals(fc_inst_1.data_items['Test_1.P3.x'].is_driven_by, fc_inst_1.data_items['Test_1.ADD1.q'])
-   assertEquals(fc_inst_1.data_items['Test_1.P4.x'].is_driven_by, fc_inst_1.data_items['Test_1.SUB1.q'])
+   assertRefEquals(fc_inst_1.data_items['Test_1.ADD1.a'].is_driven_by, fc_inst_1.data_items['Test_1.R1.q'])
+   assertRefEquals(fc_inst_1.data_items['Test_1.ADD1.b'].is_driven_by, fc_inst_1.data_items['Test_1.R2.q'])
+   assertRefEquals(fc_inst_1.data_items['Test_1.SUB1.a'].is_driven_by, fc_inst_1.data_items['Test_1.R1.q'])
+   assertRefEquals(fc_inst_1.data_items['Test_1.SUB1.b'].is_driven_by, fc_inst_1.data_items['Test_1.R2.q'])
+   assertRefEquals(fc_inst_1.data_items['Test_1.P1.x'].is_driven_by, fc_inst_1.data_items['Test_1.R1.q'])
+   assertRefEquals(fc_inst_1.data_items['Test_1.P2.x'].is_driven_by, fc_inst_1.data_items['Test_1.R2.q'])
+   assertRefEquals(fc_inst_1.data_items['Test_1.P3.x'].is_driven_by, fc_inst_1.data_items['Test_1.ADD1.q'])
+   assertRefEquals(fc_inst_1.data_items['Test_1.P4.x'].is_driven_by, fc_inst_1.data_items['Test_1.SUB1.q'])
 
    fc_inst_1:reset()
 
@@ -556,6 +556,8 @@ function Test_fc_instance:test_create()
    fc_inst_1:step()
    assertEquals(fc_inst_1.data_items['Test_1.P3.x'].value, 10)
    assertEquals(fc_inst_1.data_items['Test_1.P4.x'].value, -2)
+   
+   fc_inst_1:dot(fc_inst_1.name .. '.dot')
 end
 
 return LuaUnit:run()
