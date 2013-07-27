@@ -15,6 +15,7 @@ local function data_item_set(self, value)
    end
 end
 
+
 -- Given a data item specification, create a new data item
 
 local function data_item_new(data_spec, name, reset_value, fblock)
@@ -71,6 +72,7 @@ local function data_spec_new(name, datatype, default_value)
 
    return data_spec
 end
+
 
 local data = 
 {
