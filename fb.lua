@@ -403,6 +403,80 @@ local function fc_step(self)
    end
 end
 
+local function fc_dot_string(fc)
+   local dot = {}
+   
+   local name = fc.name
+   local fc_spec = fc.spec
+   local data_items = fc.data_items
+   
+   dot[#dot+1] = 'digraph'
+   dot[#dot+1] = '{'
+   dot[#dot+1] = '   rankdir = LR'
+
+   for _, fb in ipairs(fc.inputs) do
+      dot[#dot+1] = '   subgraph cluster_i' .. _
+      dot[#dot+1] = '   {'      
+      dot[#dot+1] = '      label="' .. fb.name .. '"'
+      for data_item_name, data_item in pairs(fb.data_items) do
+         dot[#dot+1] = '      "' .. data_item_name .. '"'
+                    .. ' [ label="' .. data_item.data_spec.name .. '" ]' 
+       end
+      dot[#dot+1] = '   }'
+   end
+   
+   for _, fb in ipairs(fc.functions) do
+      dot[#dot+1] = '   subgraph cluster_f' .. _
+      dot[#dot+1] = '   {'
+      dot[#dot+1] = '      label="' .. fb.name .. '"'
+      for data_item_name, data_item in pairs(fb.data_items) do
+         dot[#dot+1] = '      "' .. data_item_name .. '"'
+                    .. ' [ label="' .. data_item.data_spec.name .. '" ]' 
+       end
+      dot[#dot+1] = '   }'
+   end
+   
+   for _, fb in ipairs(fc.outputs) do
+      dot[#dot+1] = '   subgraph cluster_o_' .. _
+      dot[#dot+1] = '   {'
+      dot[#dot+1] = '      label="' .. fb.name .. '"'
+      for data_item_name, data_item in pairs(fb.data_items) do
+         dot[#dot+1] = '      "' .. data_item_name .. '"'
+                    .. ' [ label="' .. data_item.data_spec.name .. '" ]' 
+       end
+      dot[#dot+1] = '   }'
+   end
+
+   for _, l in ipairs(fc_spec.links) do
+      local source=l[1]
+      local dest=l[2]
+
+      local source_name=source[1]
+      local source_port=source[2]
+
+      local dest_name=dest[1]
+      local dest_port=dest[2]
+
+      local source_full_name = name .. '.' .. source_name .. '.' .. source_port
+      local dest_full_name = name .. '.' .. dest_name .. '.' .. dest_port
+      
+      local source_item = data_items[source_full_name]
+      local dest_item   = data_items[dest_full_name]
+      
+      dot[#dot+1] = '   "' .. source_full_name .. '" -> "' .. dest_full_name .. '"'
+   end
+   dot[#dot+1] = '}'
+   
+   return table.concat(dot, '\n')
+end
+
+local function fc_dot_file(fc, filename)
+   local s = fc_dot_string(fc)
+   local f = io.open(filename, "w")
+   f:write(s)
+   f:close()   
+end
+
 -- Create a function chart run-time instance
 -- -----------------------------------------
 
@@ -465,6 +539,7 @@ local function fc_instance_new(name, fc_spec)
    end
 
    fc_inst.name = name
+   fc_inst.spec = fc_spec
    fc_inst.inputs = inputs
    fc_inst.outputs = outputs
    fc_inst.functions = functions
@@ -473,6 +548,7 @@ local function fc_instance_new(name, fc_spec)
 
    fc_inst.reset = fc_reset
    fc_inst.step = fc_step
+   fc_inst.dot = fc_dot_file
 
    return fc_inst
 end
