@@ -19,6 +19,18 @@ function Test_data_spec:test_create_positional()
 end
 
 
+function Test_data_spec:test_create_new_item()
+end
 
-return LuaUnit:run()
+
+Test_data_item = {}
+
+function Test_data_item:test_reset()
+end
+
+function Test_data_item:test_set()
+end
+
+local code = LuaUnit:run()
+return os.exit(code)
 

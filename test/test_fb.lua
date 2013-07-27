@@ -547,5 +547,7 @@ function Test_fc_instance:test_create()
    fc_inst_1:dot(fc_inst_1.name .. '.dot')
 end
 
-return LuaUnit:run()
+
+local code = LuaUnit:run()
+os.exit(code)
 

@@ -68,5 +68,7 @@ function Test_fblib_arithmetic:test_add()
    end
 end
 
-return LuaUnit:run()
+
+local code = LuaUnit:run()
+os.exit(code)
 

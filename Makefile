@@ -1,15 +1,13 @@
 
 testfiles=$(wildcard test/test_*)
-tests=$(patsubst test/%, %, $(testfiles))
+tests=$(patsubst test/%.lua, %, $(testfiles))
 
 all: $(tests)
 
 $(tests): 
-	test/$@
+	test/$@.lua
 	
-test: $(testfiles)
-	echo $(testfiles)
-	$(foreach f, $^, $f;)
+test: $(testfiles) $(tests)
 
 .PHONY: test $(tests)
 
