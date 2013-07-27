@@ -12,15 +12,11 @@ Function block processing
 6. Single-step a function chart (/)
 --]]
 
-
-local function data_item_reset(data_item)
-   data_item.value = data_item.data_spec.default_value
-   data_item.has_changed = false
-end
+local data = require('data_item')
 
 local function fb_reset_default(fb)
    for _, item in pairs(fb.data_items) do
-      data_item_reset(item)
+      item:reset()
    end
    fb.has_changed = false
 end
@@ -133,33 +129,7 @@ local function fb_spec_new(name, inputs, outputs, state_vars, algorithm, reset, 
    end
 end
 
-local function data_item_set(self, value)
-   self.value = value
-   self.has_changed = true
-   for _, item in ipairs(self.drives) do
-      item.value = self.value
-      item.has_changed = true
-      item.fblock.has_changed = true
-   end
-end
 
--- Data items
--- Given a data item specification, create a new data item
-
-local function data_item_new(name, fblock, data_spec)
-   local data_item = {}
-   
-   data_item.name = name
-   data_item.fblock = fblock
-   data_item.data_spec = data_spec
-   data_item.set = data_item_set
-   data_item.drives = {}
-   
-   return data_item
-end
-
-
--- Data items
 
 local function fb_new(name, fb_spec, fc_inst)
    local fb_inst = {}
@@ -171,7 +141,7 @@ local function fb_new(name, fb_spec, fc_inst)
    local data = {}
    for _, data_spec in pairs(fb_spec.data_specs) do
       local data_item_name = name .. '.' .. data_spec.name
-      data_item = data_item_new(data_item_name, fb_inst, data_spec)
+      data_item = data_spec:item_new(data_item_name, fb_inst)
       data_items[data_item_name] = data_item
       data[data_spec.name] = data_item
    end
@@ -191,45 +161,6 @@ local function fb_reset(fb)
    else
       fb_reset_default(fb)
    end
-end
-
--- Specification for a data item
--- -----------------------------
-
--- name: name of the data item
--- datatype: datatype of the data item
--- default_value: the default value of the data item used when the 
---    function block is restarted
-
-
--- There are three ways to create a new function block spec:
--- * call the function passing the inputs parameters as positional parameters
--- * call the function, passing a table as a parameter with positional parameters
--- * call the function, passing a table as a parameter with named parameters
-
-local function data_spec_new(name, datatype, default_value)
-   local data_spec = {}
-   
-   if type(name) == 'table' then
-      local t = name
-      if #t ~= 0 then
-         data_spec.name = t[1]
-         data_spec.datatype = t[2]
-         data_spec.default_value = t[3]
-      else
-         data_spec.name = t.name
-         data_spec.datatype = t.datatype
-         data_spec.default_value = t.default_value
-      end
-   else
-      data_spec.name = name
-      data_spec.datatype = datatype
-      data_spec.default_value = default_value
-   end
-
-   data_spec.is_connected = false
-
-   return data_spec
 end
 
 
@@ -556,7 +487,7 @@ end
 
 local fb = 
 {
-   data_spec_new = data_spec_new,
+   data_spec_new = data.spec_new,
    fb_spec_new = fb_spec_new,
    fc_spec_new = fc_spec_new,
    fc_instance_new = fc_instance_new,
