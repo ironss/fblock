@@ -1,6 +1,6 @@
 
 local function data_item_reset(data_item)
-   data_item.value = data_item.data_spec.default_value
+   data_item.value = data_item.reset_value
    data_item.has_changed = false
 end
 
@@ -16,11 +16,12 @@ end
 
 -- Given a data item specification, create a new data item
 
-local function data_item_new(data_spec, name, fblock)
+local function data_item_new(data_spec, name, reset_value, fblock)
    local data_item = {}
    
    data_item.name = name
    data_item.fblock = fblock
+   data_item.reset_value = reset_value or data_spec.default_value
    data_item.data_spec = data_spec
    data_item.drives = {}
    data_item.reset = data_item_reset
@@ -64,7 +65,7 @@ local function data_spec_new(name, datatype, default_value)
       data_spec.default_value = default_value
    end
 
-   data_spec.item_new = data_item_new
+   data_spec.new_item = data_item_new
    data_spec.is_connected = false
 
    return data_spec

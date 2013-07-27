@@ -33,7 +33,7 @@ local function fb_new(fb_spec, name, fc_inst)
    local data = {}
    for _, data_spec in pairs(fb_spec.data_specs) do
       local data_item_name = name .. '.' .. data_spec.name
-      data_item = data_spec:item_new(data_item_name, fb_inst)
+      data_item = data_spec:new_item(data_item_name, nil, fb_inst)
       data_items[data_item_name] = data_item
       data[data_spec.name] = data_item
    end
