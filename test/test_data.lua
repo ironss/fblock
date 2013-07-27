@@ -7,7 +7,6 @@ local serpent = require('serpent')
 local data = require('data_item')
 
 
-
 Test1_data_spec = {}
 
 function Test1_data_spec:test1_create_positional()
@@ -44,6 +43,7 @@ function Test_data_item:test_set_value()
    assertEquals(s.value, 123)
 end
 
+
 function Test_data_item:test_reset_data_item()
    local ds1=data.spec_new('x', 'real', 0)
    assertNotEquals(ds1, nil)
@@ -57,6 +57,7 @@ function Test_data_item:test_reset_data_item()
    s:reset()
    assertEquals(s.value, 0)
 end
+
 
 function Test_data_item:test_create_2_data_items()
    local ds1=data.spec_new('x', 'real', 0)

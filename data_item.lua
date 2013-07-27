@@ -1,9 +1,11 @@
 -- Data items
--- 
+--
+
 local function data_item_reset(data_item)
    data_item.value = data_item.reset_value
    data_item.has_changed = false
 end
+
 
 local function data_item_set(self, value)
    self.value = value
