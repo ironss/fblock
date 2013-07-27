@@ -169,7 +169,6 @@ end
 
 local fb = 
 {
---   data_spec_new = data.spec_new,
    spec_new = fb_spec_new,
 }
 
