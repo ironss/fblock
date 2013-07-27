@@ -1,6 +1,6 @@
 -- Library of standard function blocks
 
-local fb = require('fb')
+local fb = require('fc')
 
 
 -- Sources

@@ -4,8 +4,8 @@ package.path = './?/?.lua;' .. package.path
 require('luaunit')
 local serpent = require('serpent')
 
-local fb = require('fb')
 local fblib = require('fblib')
+local fb = require('fc')
 
 
 

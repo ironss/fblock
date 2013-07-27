@@ -7,19 +7,6 @@ local serpent = require('serpent')
 local fb = require('fc')
 
 
-
-Test_data_spec = {}
-
-function Test_data_spec:test_create_positional()
-   local ds1 = fb.data_spec_new('x', 'real', 0)
-   
-   assertEquals(ds1.name, 'x')
-   assertEquals(ds1.datatype, 'real')
-   assertEquals(ds1.default_value, 0)
-end
-
-
-
 Test_fb_spec = {}
 
 function Test_fb_spec:test_create_positional1()

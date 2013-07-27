@@ -1,7 +1,15 @@
 
-test:
-	test/test_fb.lua
-	test/test_fblib.lua
+testfiles=$(wildcard test/test_*)
+tests=$(patsubst test/%, %, $(testfiles))
 
-.PHONY: test
+all: $(tests)
+
+$(tests): 
+	test/$@
+	
+test: $(testfiles)
+	echo $(testfiles)
+	$(foreach f, $^, $f;)
+
+.PHONY: test $(tests)
 
