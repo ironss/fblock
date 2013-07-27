@@ -78,6 +78,26 @@ local add = fb.fb_spec_new{
    end,
 }
 
+local multiply = fb.fb_spec_new{
+   name="multiply",
+   inputs={
+      fb.data_spec_new{ "a", "real", 0 },
+      fb.data_spec_new{ "b", "real", 0 },
+   },
+   outputs={
+      fb.data_spec_new{ "q", "real", 0 },
+   },
+   state_vars=nil,
+   algorithm=function(data)
+      if data.a.value ~= nil and data.b.value ~= nil then
+         data.q:set(data.a.value * data.b.value)
+
+         data.a.has_changed = false
+         data.b.has_changed = false
+      end
+   end,
+}
+
 
 
 local fblib = 
@@ -85,6 +105,7 @@ local fblib =
    ramp = ramp,
    sink = sink,
    add = add,
+   multiply = multiply
 }
 
 return fblib
